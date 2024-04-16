@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ID Card Scanner</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0" />
+  <script src="https://cdn.jsdelivr.net/npm/dynamsoft-core@3.0.33/dist/core.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dynamsoft-license@3.0.40/dist/license.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dynamsoft-barcode-reader@10.0.21/dist/dbr.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dynamsoft-label-recognizer@3.0.30/dist/dlr.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dynamsoft-document-normalizer@2.0.20/dist/ddn.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dynamsoft-code-parser@2.0.20/dist/dcp.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dynamsoft-capture-vision-router@2.0.32/dist/cvr.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dynamsoft-camera-enhancer@4.0.1/dist/dce.js"></script>
+  <style>
+    .scanner {
+      display: flex;
+    }
+
+    .options {
+      flex-basis: 30%;
+      background: #F0EDE9;
+      overflow: auto;
+    }
+
+    .viewer {
+      flex-basis: 70%;
+      overflow: hidden;
+    }
+    
+    .navbar {
+      display: flex;
+      align-items: center;
+      height: 50px;
+      background: black;
+      width: 100%;
+    }
+
+    body {
+      margin: 0;
+    }
+
+    .fullwidth {
+      width: 100%;
+    }
+
+    .title {
+      margin-left: 8px;
+      text-decoration: none;
+      color: white;
+      font-family: sans-serif;
+      font-size: larger;
+      text-transform: uppercase;
+    }
+
+    .scanner {
+      min-height: 320px;
+      height: calc(100vh - 50px);
+    }
+
+    .section {
+      padding: 8px;
+    }
+
+    .viewer .section {
+      height: calc(100% - 16px);
+    }
+
+    .options select {
+      width: 100%;
+      height: 30px;
+    }
+
+    .options div {
+      margin-bottom: 10px;
+    }
+
+    .d-primary-btn {
+      display: inline-block;
+      background-color: #fe8e14;
+      color: #fff;
+      text-align: center;
+      cursor: pointer;
+      transition: ease-in .2s all;
+      font-family: "sans-serif"
+    }
+
+    .d-primary-btn:hover {
+      box-shadow:-4px 4px #000;
+      transform: translate(4px,-4px)
+    }
+
+    .d-secondary-btn {
+      display: inline-block;
+      background-color: transparent;
+      color: #fe8e14;
+      text-align: center;
+      cursor: pointer;
+      font-family: "sans-serif"
+    }
+
+    .d-secondary-btn:hover {
+      color: #fea543;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      overflow: auto;
+      height: 40px;
+      white-space: nowrap;
+    }
+
+    .actions .d-primary-btn {
+      padding: 5px 10px;
+      margin-right: 5px;
+    }
+
+    #enhancerUIContainer {
+      display: none;
+    }
+
+    .main-view {
+      height: calc(100% - 40px);
+    }
+
+    #documentViewer {
+      border: 1px solid gray;
+      border-radius: 0.5%;
+      width: 100%;
+      height: 100%;
+    }
+
+    .ml-10 {
+      margin-left: 10px;
+    }
+
+    .modal {
+      display: flex;
+      align-items: flex-start;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      min-width: 250px;
+      min-height: 150px;
+      border: 1px solid gray;
+      border-radius: 5px;
+      background: white;
+      z-index: 9999;
+      padding: 10px;
+      visibility: hidden;
+    }
+
+    .input-modal.active {
+      visibility: inherit;
+    }
+
+    .result-modal {
+      overflow: auto;
+      max-height: 50%;
+      max-width: 80%;
+    }
+
+    .result-modal.active {
+      visibility: inherit;
+    }
+
+    .result-modal li {
+      margin-bottom: 10px;
+    }
+
+    .result-modal img {
+      max-width:100px;
+    }
+
+    .input-modal input {
+      width: calc(100% - 10px);
+    }
+
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+    }
+
+    @media screen and (max-device-width: 600px){
+      .scanner {
+        flex-wrap: wrap;
+      }
+      .options {
+        flex-basis: 100%;
+      }
+      .viewer {
+        flex-basis: 100%;
+      }
+
+      .scanner {
+        height: auto;
+      }
+
+      .main-view {
+        height: 400px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a class="title" href="#">ID Card Scanner</a>
+  </nav>
+  <div class="container">
+    <div class="scanner">
+      <div class="options">
+        <div class="section">
+          <div>
+            <label>
+              Camera:
+              <select id="select-camera"></select>
+            </label>
+          </div>
+          <div>
+            <label>
+              Resolution:
+              <select id="select-resolution">
+                <option value="100">100</option>
+                <option value="200">200</option>
+                <option value="300" selected>300</option>
+              </select>
+            </label>
+          </div>
+          <div>
+            <input type="checkbox" id="autoCapture"/>
+            <label for="showUI">
+              Auto Capture
+            </label>
+          </div>
+          <div>
+            <a onclick="scan();" class="d-primary-btn fullwidth" style="padding-top:5px;padding-bottom:5px;">Scan</a>
+            <a onclick="loadImages();" class="d-secondary-btn fullwidth" style="margin-top:5px;">Import Local Image</a>
+          </div>
+        </div>
+      </div>
+      <div class="viewer">
+        <div class="section" >
+          <div id="viewerContainer" class="main-view">
+            <div id="documentViewer"></div>
+          </div>
+          <div id="enhancerUIContainer" class="main-view"></div>
+          <div class="actions">
+            <a class="d-primary-btn" onclick="cropAll();">Crop All</a>
+            <a class="d-primary-btn" onclick="readAll();">Read All</a>
+            <span id="status" class="ml-10"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal input-modal">
+    <div>
+      <div>
+        Please input your Dynamsoft Capture Vision's license (<a href="https://www.dynamsoft.com/customer/license/trialLicense" target="_blank">apply</a> or use the one-day trial):
+      </div>
+      <br/>
+      <label>
+        Dynamsoft Capture Vision:
+      </label>
+      <br/>
+      <input type="text" id="dcvLicense"/>
+      <br/>
+      <button id="saveLicenseBtn">Save</button>
+    </div>
+  </div>
+  <div class="modal result-modal">
+    <div>
+      <p>Results:</p>
+      <ol id="results"></ol>
+      <button id="closeBtn">Close</button>
+    </div>
+  </div>
+  <script type="text/javascript">
+    let oneDayTrial = "DLS2eyJoYW5kc2hha2VDb2RlIjoiMjAwMDAxLTE2NDk4Mjk3OTI2MzUiLCJvcmdhbml6YXRpb25JRCI6IjIwMDAwMSIsInNlc3Npb25QYXNzd29yZCI6IndTcGR6Vm05WDJrcEQ5YUoifQ=="; //one-day trial
+    let dcvLicense;
+    let router;
+    let parser;
+    let cameraEnhancer;
+    let scanners = [];
+    let readingResults = [];
+    let imageIndices = [];
+    let MRZFields = ["documentNumber","passportNumber","issuingState","name","sex","nationality","dateOfExpiry","dateOfBirth"];
+    let DLFields = ["licenseNumber","lastName","firstName","city","expirationDate","birthDate","sex","issuedDate"];
+    
+    window.onload = function(){
+      document.getElementById("saveLicenseBtn").addEventListener("click",function(){
+        dcvLicense = document.getElementById("dcvLicense").value;
+        localStorage.setItem("dcvLicense",dcvLicense);
+        hideInputModal();
+        init();
+      })
+      document.getElementById("closeBtn").addEventListener("click",function(){
+        hideResultModal();
+      })
+      showInputModal();
+    }
+
+    function showInputModal(){
+      let storedDCVLicense = localStorage.getItem("dcvLicense");
+      if (storedDCVLicense) {
+        dcvLicense = storedDCVLicense;
+      }
+      document.getElementById("dcvLicense").value = dcvLicense ?? oneDayTrial;
+      document.getElementsByClassName("input-modal")[0].classList.add("active");
+    }
+
+    function hideInputModal(){
+      document.getElementsByClassName("input-modal")[0].classList.remove("active");
+    }
+
+    async function init(){
+      Dynamsoft.License.LicenseManager.initLicense(dcvLicense ?? oneDayTrial);
+      Dynamsoft.Core.CoreModule.loadWasm(["DDN","DBR","DLR"]);
+      router = await Dynamsoft.CVR.CaptureVisionRouter.createInstance();
+      await Dynamsoft.DCP.CodeParserModule.loadSpec("MRTD_TD1_ID");
+      await Dynamsoft.DCP.CodeParserModule.loadSpec("MRTD_TD2_FRENCH_ID")
+      await Dynamsoft.DCP.CodeParserModule.loadSpec("MRTD_TD2_ID")
+      await Dynamsoft.DCP.CodeParserModule.loadSpec("MRTD_TD2_VISA")
+      await Dynamsoft.DCP.CodeParserModule.loadSpec("MRTD_TD3_PASSPORT")  
+      await Dynamsoft.DCP.CodeParserModule.loadSpec("MRTD_TD3_VISA")
+      await Dynamsoft.DCP.CodeParserModule.loadSpec("AAMVA_DL_ID");
+      parser = await Dynamsoft.DCP.CodeParser.createInstance();
+      let cameraView = await Dynamsoft.DCE.CameraView.createInstance();
+      cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(cameraView);
+      document.querySelector("#enhancerUIContainer").append(cameraView.getUIElement());
+    }
+
+    async function cropAll(){
+      let length = DWObject.HowManyImagesInBuffer;
+      await router.initSettings("{\"CaptureVisionTemplates\": [{\"Name\": \"Default\"},{\"Name\": \"DetectDocumentBoundaries_Default\",\"ImageROIProcessingNameArray\": [\"roi-detect-document-boundaries\"]},{\"Name\": \"DetectAndNormalizeDocument_Default\",\"ImageROIProcessingNameArray\": [\"roi-detect-and-normalize-document\"]},{\"Name\": \"NormalizeDocument_Binary\",\"ImageROIProcessingNameArray\": [\"roi-normalize-document-binary\"]},{\"Name\": \"NormalizeDocument_Gray\",\"ImageROIProcessingNameArray\": [\"roi-normalize-document-gray\"]},{\"Name\": \"NormalizeDocument_Color\",\"ImageROIProcessingNameArray\": [\"roi-normalize-document-color\"]}],\"TargetROIDefOptions\": [{\"Name\": \"roi-detect-document-boundaries\",\"TaskSettingNameArray\": [\"task-detect-document-boundaries\"]},{\"Name\": \"roi-detect-and-normalize-document\",\"TaskSettingNameArray\": [\"task-detect-and-normalize-document\"]},{\"Name\": \"roi-normalize-document-binary\",\"TaskSettingNameArray\": [\"task-normalize-document-binary\"]},{\"Name\": \"roi-normalize-document-gray\",\"TaskSettingNameArray\": [\"task-normalize-document-gray\"]},{\"Name\": \"roi-normalize-document-color\",\"TaskSettingNameArray\": [\"task-normalize-document-color\"]}],\"DocumentNormalizerTaskSettingOptions\": [{\"Name\": \"task-detect-and-normalize-document\",\"SectionImageParameterArray\": [{\"Section\": \"ST_REGION_PREDETECTION\",\"ImageParameterName\": \"ip-detect-and-normalize\"},{\"Section\": \"ST_DOCUMENT_DETECTION\",\"ImageParameterName\": \"ip-detect-and-normalize\"},{\"Section\": \"ST_DOCUMENT_NORMALIZATION\",\"ImageParameterName\": \"ip-detect-and-normalize\"}]},{\"Name\": \"task-detect-document-boundaries\",\"TerminateSetting\": {\"Section\": \"ST_DOCUMENT_DETECTION\"},\"SectionImageParameterArray\": [{\"Section\": \"ST_REGION_PREDETECTION\",\"ImageParameterName\": \"ip-detect\"},{\"Section\": \"ST_DOCUMENT_DETECTION\",\"ImageParameterName\": \"ip-detect\"},{\"Section\": \"ST_DOCUMENT_NORMALIZATION\",\"ImageParameterName\": \"ip-detect\"}]},{\"Name\": \"task-normalize-document-binary\",\"StartSection\": \"ST_DOCUMENT_NORMALIZATION\",\"ColourMode\": \"ICM_BINARY\",\"SectionImageParameterArray\": [{\"Section\": \"ST_REGION_PREDETECTION\",\"ImageParameterName\": \"ip-normalize\"},{\"Section\": \"ST_DOCUMENT_DETECTION\",\"ImageParameterName\": \"ip-normalize\"},{\"Section\": \"ST_DOCUMENT_NORMALIZATION\",\"ImageParameterName\": \"ip-normalize\"}]},{\"Name\": \"task-normalize-document-gray\",\"ColourMode\": \"ICM_GRAYSCALE\",\"StartSection\": \"ST_DOCUMENT_NORMALIZATION\",\"SectionImageParameterArray\": [{\"Section\": \"ST_REGION_PREDETECTION\",\"ImageParameterName\": \"ip-normalize\"},{\"Section\": \"ST_DOCUMENT_DETECTION\",\"ImageParameterName\": \"ip-normalize\"},{\"Section\": \"ST_DOCUMENT_NORMALIZATION\",\"ImageParameterName\": \"ip-normalize\"}]},{\"Name\": \"task-normalize-document-color\",\"ColourMode\": \"ICM_COLOUR\",\"StartSection\": \"ST_DOCUMENT_NORMALIZATION\",\"SectionImageParameterArray\": [{\"Section\": \"ST_REGION_PREDETECTION\",\"ImageParameterName\": \"ip-normalize\"},{\"Section\": \"ST_DOCUMENT_DETECTION\",\"ImageParameterName\": \"ip-normalize\"},{\"Section\": \"ST_DOCUMENT_NORMALIZATION\",\"ImageParameterName\": \"ip-normalize\"}]}],\"ImageParameterOptions\": [{\"Name\": \"ip-detect-and-normalize\",\"BinarizationModes\": [{\"Mode\": \"BM_THRESHOLD\", \"BinarizationThreshold\": 250}],\"TextDetectionMode\": {\"Mode\": \"TTDM_WORD\",\"Direction\": \"HORIZONTAL\",\"Sensitivity\": 7}},{\"Name\": \"ip-detect\",\"BinarizationModes\": [{\"Mode\": \"BM_LOCAL_BLOCK\",\"BlockSizeX\": 0,\"BlockSizeY\": 0,\"EnableFillBinaryVacancy\": 0,\"ThresholdCompensation\": 7}],\"TextDetectionMode\": {\"Mode\": \"TTDM_WORD\",\"Direction\": \"HORIZONTAL\",\"Sensitivity\": 7},\"ScaleDownThreshold\": 512},{\"Name\": \"ip-normalize\",\"BinarizationModes\": [{\"Mode\": \"BM_LOCAL_BLOCK\",\"BlockSizeX\": 0,\"BlockSizeY\": 0,\"EnableFillBinaryVacancy\": 0}],\"TextDetectionMode\": {\"Mode\": \"TTDM_WORD\",\"Direction\": \"HORIZONTAL\",\"Sensitivity\": 7}}]}");
+      for (let index = 0; index < length; index++) {
+        const blob = await convertToBlob(index);
+        let result = await router.capture(blob, "DetectAndNormalizeDocument_Default");
+        if (result.items[0]) {
+          const dataURL = result.items[0].toCanvas().toDataURL();
+          await loadImageFromDataURL(dataURL);
+          DWObject.RemoveImage(index);
+          DWObject.MoveImage(length-1,index);
+        }
+      }
+    }
+
+    async function readAll(){
+      readingResults = [];
+      imageIndices = [];
+      let length = DWObject.HowManyImagesInBuffer;
+      for (let index = 0; index < length; index++) {
+        DWObject.SelectImages([index]);
+        const blob = await convertToBlob(index);
+        await router.initSettings("{\"CaptureVisionTemplates\": [{\"Name\": \"mrz\",\"ImageROIProcessingNameArray\": [\"roi-mrz-passport\"]}],\"TargetROIDefOptions\": [{\"Name\": \"roi-mrz-passport\",\"TaskSettingNameArray\": [\"task-mrz-passport\"]}],\"TextLineSpecificationOptions\": [{\"Name\": \"tls-mrz-text\",\"CharacterModelName\": \"MRZ\",\"StringRegExPattern\": \"([ACI][A-Z<][A-Z<]{3}[A-Z0-9<]{9}[0-9][A-Z0-9<]{15}){(30)}|([0-9]{2}[(01-12)][(01-31)][0-9][MF<][0-9]{2}[(01-12)][(01-31)][0-9][A-Z<]{3}[A-Z0-9<]{11}[0-9]){(30)}|([A-Z<]{30}){(30)}|([ACIV][A-Z<][A-Z<]{3}[A-Z<]{31}){(36)}|([A-Z0-9<]{9}[0-9][A-Z<]{3}[0-9]{2}[(01-12)][(01-31)][0-9][MF<][0-9]{2}[(01-12)][(01-31)][0-9][A-Z0-9<]{8}){(36)}|([PV][A-Z<][A-Z<]{3}[A-Z<]{39}){(44)}|([A-Z0-9<]{9}[0-9][A-Z<]{3}[0-9]{2}[(01-12)][(01-31)][0-9][MF<][0-9]{2}[(01-12)][(01-31)][0-9][A-Z0-9<]{14}[A-Z0-9<]{2}){(44)}\",\"StringLengthRange\": [30,44],\"CharHeightRange\": [5,1000,1],\"BinarizationModes\": [{\"BlockSizeX\": 30,\"BlockSizeY\": 30,\"Mode\": \"BM_LOCAL_BLOCK\",\"MorphOperation\": \"Close\"}]},{\"Name\": \"tls-mrz-passport\",\"StringRegExPattern\": \"(P[A-Z<][A-Z<]{3}[A-Z<]{39}){(44)}|([A-Z0-9<]{9}[0-9][A-Z<]{3}[0-9]{2}[(01-12)][(01-31)][0-9][MF<][0-9]{2}[(01-12)][(01-31)][0-9][A-Z0-9<]{14}[0-9<][0-9]){(44)}\",\"StringLengthRange\": [44,44],\"BaseTextLineSpecificationName\": \"tls-mrz-text\"}],\"LabelRecognizerTaskSettingOptions\": [{\"Name\": \"mrz-text-task\",\"TextLineSpecificationNameArray\": [\"tls-mrz-text\"],\"SectionImageParameterArray\": [{\"Section\": \"ST_REGION_PREDETECTION\",\"ImageParameterName\": \"ip-mrz-text\"},{\"Section\": \"ST_TEXT_LINE_LOCALIZATION\",\"ImageParameterName\": \"ip-mrz-text\"},{\"Section\": \"ST_TEXT_LINE_RECOGNITION\",\"ImageParameterName\": \"ip-mrz-text\"}]},{\"Name\": \"task-mrz-passport\",\"TextLineSpecificationNameArray\": [\"tls-mrz-text\"],\"BaseLabelRecognizerTaskSettingName\": \"mrz-text-task\"}],\"CharacterModelOptions\": [{\"Name\": \"MRZ\"}],\"ImageParameterOptions\": [{\"Name\": \"ip-mrz-text\",\"TextureDetectionModes\": [{\"Mode\": \"TDM_GENERAL_WIDTH_CONCENTRATION\",\"Sensitivity\": 8}],\"TextDetectionMode\": {\"Mode\": \"TTDM_LINE\",\"CharHeightRange\": [20,1000,1],\"Sensitivity\": 7}}]}");
+        let OCRResult = await router.capture(blob, "mrz");
+        await router.resetSettings();
+        let barcodeReadingResult = await router.capture(blob, "ReadBarcodes_Balance");
+        console.log(barcodeReadingResult);
+        console.log(OCRResult);
+        await parseOCRResult(OCRResult,index)
+        await parseBarcodeResult(barcodeReadingResult,index)
+      }
+      if (readingResults.length>0) {
+        showResultModal();
+      }else{
+        alert("No IDs read");
+      }
+    }
+
+    async function parseOCRResult(result,imageIndex){
+      let str = "";
+      if (result.items.length < 2) {
+        return;
+      }
+      for (let index = 0; index < result.items.length; index++) {
+        const item = result.items[index];
+        if (item.type == Dynamsoft.Core.EnumCapturedResultItemType.CRIT_TEXT_LINE) {
+          if (item.text.length == 30 || item.text.length == 44) {
+            str = str + item.text;
+          }
+        }
+      }
+      if (str) {
+        let parsedResultItem = await parser.parse(str);
+        console.log(parsedResultItem);
+        readingResults.push(parsedResultItem);
+        imageIndices.push(imageIndex);
+      }
+    }
+
+    async function parseBarcodeResult(result,imageIndex){
+      for (let index = 0; index < result.items.length; index++) {
+        const item = result.items[index];
+        if (item.type == Dynamsoft.Core.EnumCapturedResultItemType.CRIT_BARCODE) {
+          if (item.formatString.indexOf("PDF417") == -1) {
+            continue;
+          }
+          try {
+            let parsedResultItem = await parser.parse(item.bytes);
+            readingResults.push(parsedResultItem);
+            imageIndices.push(imageIndex);
+            console.log(parsedResultItem);  
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      }
+    }
+
+    function showResultModal(){
+      document.getElementsByClassName("result-modal")[0].classList.add("active");
+      let ol = document.createElement("ol");
+      ol.id = "results";
+      for (let index = 0; index < readingResults.length; index++) {
+        const result = readingResults[index];
+        let fieldKeyAndValues = [];
+        let table = templateTable();
+        let body = table.getElementsByTagName("tbody")[0];
+        if (result.codeType == "AAMVA_DL_ID") {
+          fieldKeyAndValues.push({"field":"type","value":"Driver's License"});
+          for (let j = 0; j < DLFields.length; j++) {
+            const field = DLFields[j];
+            const value = result.getFieldValue(field);
+            fieldKeyAndValues.push({"field":field,"value":value});
+          }
+        }else if (result.codeType.indexOf("MRTD") != -1) {
+          fieldKeyAndValues.push({"field":"type","value":"ID Card"});
+          for (let j = 0; j < MRZFields.length; j++) {
+            const field = MRZFields[j];
+            const value = result.getFieldValue(field);
+            if (value) {
+              fieldKeyAndValues.push({"field":field,"value":value});
+            }
+          }
+        }
+        for (let j = 0; j < fieldKeyAndValues.length; j++) {
+          let row = document.createElement("tr");
+          const item = fieldKeyAndValues[j];
+          let fieldCell = document.createElement("td");
+          let valueCell = document.createElement("td");
+          fieldCell.innerText = item.field;
+          valueCell.innerText = item.value;
+          row.appendChild(fieldCell);
+          row.appendChild(valueCell);
+          body.appendChild(row);
+        }
+        //append image
+        let row = document.createElement("tr");
+        let fieldCell = document.createElement("td");
+        let valueCell = document.createElement("td");
+        let img = document.createElement("img");
+        img.src = DWObject.GetImageURL(imageIndices[index]);
+        fieldCell.innerText = "image";
+        valueCell.appendChild(img);
+        row.appendChild(fieldCell);
+        row.appendChild(valueCell);
+        body.appendChild(row);
+
+        let li = document.createElement("li");
+        li.append(table);
+        ol.appendChild(li);
+      }
+      document.getElementById("results").outerHTML = ol.outerHTML;
+    }
+
+    function templateTable(){
+      let table = document.createElement("table");
+      let head = document.createElement("thead");
+      let headRow = document.createElement("tr");
+      let th1 = document.createElement("th");
+      th1.innerText = "Field";
+      let th2 = document.createElement("th");
+      th2.innerText = "Value";
+      headRow.appendChild(th1);
+      headRow.appendChild(th2);
+      head.appendChild(headRow);
+      let body = document.createElement("tbody");
+      table.appendChild(head);
+      table.appendChild(body);
+      return table;
+    }
+    function hideResultModal(){
+      document.getElementsByClassName("result-modal")[0].classList.remove("active");
+    }
+
+    function updateStatus(status){
+      document.getElementById("status").innerText = status;
+    }
+  </script>
+</body>
+</html>
