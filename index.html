@@ -27,6 +27,24 @@
       overflow: hidden;
     }
 
+    #documentViewer {
+      display: flex;
+      flex-wrap: wrap;
+      overflow: auto;
+      border: 1px solid gray;
+      border-radius: 0.5%;
+      width: 100%;
+      height: 100%;
+    }
+
+    #documentViewer canvas{
+      width: 30%;
+      height: 50%;
+      object-fit: contain;
+      border: 1px solid gray;
+      margin: 5px;
+    }
+
     .dce-video-container {
       position: relative;
       left: 0;
@@ -132,13 +150,6 @@
       height: calc(100% - 40px);
     }
 
-    #documentViewer {
-      border: 1px solid gray;
-      border-radius: 0.5%;
-      width: 100%;
-      height: 100%;
-    }
-
     .ml-10 {
       margin-left: 10px;
     }
@@ -209,6 +220,11 @@
       .main-view {
         height: 400px;
       }
+
+      #documentViewer canvas{
+        width: calc(100% - 10px);
+        height: 100%;
+      }
     }
   </style>
 </head>
@@ -244,7 +260,7 @@
             </label>
           </div>
           <div>
-            <a onclick="startCamera();" class="d-primary-btn fullwidth" style="padding-top:5px;padding-bottom:5px;">Start Camera</a>
+            <a id="cameraButton" onclick="performCameraAction();" class="d-primary-btn fullwidth" style="padding-top:5px;padding-bottom:5px;">Start Camera</a>
           </div>
         </div>
       </div>
@@ -351,6 +367,17 @@
         cameraSelect.appendChild(new Option(camera.label,camera.deviceId));
       }
     }
+    
+    async function performCameraAction(){
+      let cameraButton = document.getElementById("cameraButton");
+      if (cameraButton.innerText == "Start Camera") {
+        await startCamera();
+        cameraButton.innerText = "Capture";
+      }else{
+        captureFrame();
+        cameraButton.innerText = "Start Camera";
+      }
+    }
 
     async function startCamera(){
       toggleCamera(true);
@@ -361,6 +388,13 @@
       await cameraEnhancer.selectCamera(selectedCamera);
       await cameraEnhancer.setResolution({width:width, height:height});
       await cameraEnhancer.open();
+    }
+
+    function captureFrame(){
+      let image = cameraEnhancer.fetchImage();
+      let viewer = document.getElementById("documentViewer");
+      viewer.appendChild(image.toCanvas());
+      toggleCamera(false);
     }
 
     function toggleCamera(show){
