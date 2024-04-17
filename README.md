@@ -2,6 +2,12 @@
 
 A web demo scanning ID cards via cameras.
 
+
+
+https://github.com/xulihang/Web-ID-Card-Scanner-via-Camera/assets/5462205/0cd1d1ca-da7f-426d-a21e-12cc63e2bd15
+
+
+
 It uses the following SDKs by Dynamsoft:
 
 * [Dynamsoft Camera Enhancer](https://www.dynamsoft.com/camera-enhancer/docs/core/introduction/): access cameras and capture frames.
