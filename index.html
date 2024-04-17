@@ -255,9 +255,9 @@
             </label>
           </div>
           <div>
-            <input type="checkbox" id="autoCapture"/>
-            <label for="autoCapture">
-              Auto Capture
+            <input type="checkbox" id="autoCropAndCapture"/>
+            <label for="autoCropAndCapture">
+              Auto Crop and Capture
             </label>
           </div>
           <div>
@@ -392,7 +392,7 @@
       await cameraEnhancer.selectCamera(selectedCamera);
       await cameraEnhancer.setResolution({width:width, height:height});
       await cameraEnhancer.open();
-      if (document.getElementById("autoCapture").checked) {
+      if (document.getElementById("autoCropAndCapture").checked) {
         startLiveDetection();
       }
     }
