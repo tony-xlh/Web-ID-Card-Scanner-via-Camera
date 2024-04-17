@@ -533,31 +533,35 @@
     }
 
     async function deleteSelected(){
+      let canvas = getSelectedCanvas();
+      if (canvas) {
+        canvas.remove();
+      }
+    }
+
+    function getSelectedCanvas(){
       let childCanvases = document.getElementById("documentViewer").getElementsByTagName("canvas");
       for (let index = childCanvases.length - 1; index >= 0; index--) {
         const canvas = childCanvases[index];
         if (canvas.classList.contains("selected")) {
-          canvas.remove();
+          return canvas;
         }
       }
+      return null;
     }
 
-    async function readAll(){
+    async function readSelected(){
       readingResults = [];
-      imageIndices = [];
-      let length = DWObject.HowManyImagesInBuffer;
-      for (let index = 0; index < length; index++) {
-        DWObject.SelectImages([index]);
-        const blob = await convertToBlob(index);
-        await router.initSettings("{\"CaptureVisionTemplates\": [{\"Name\": \"mrz\",\"ImageROIProcessingNameArray\": [\"roi-mrz-passport\"]}],\"TargetROIDefOptions\": [{\"Name\": \"roi-mrz-passport\",\"TaskSettingNameArray\": [\"task-mrz-passport\"]}],\"TextLineSpecificationOptions\": [{\"Name\": \"tls-mrz-text\",\"CharacterModelName\": \"MRZ\",\"StringRegExPattern\": \"([ACI][A-Z<][A-Z<]{3}[A-Z0-9<]{9}[0-9][A-Z0-9<]{15}){(30)}|([0-9]{2}[(01-12)][(01-31)][0-9][MF<][0-9]{2}[(01-12)][(01-31)][0-9][A-Z<]{3}[A-Z0-9<]{11}[0-9]){(30)}|([A-Z<]{30}){(30)}|([ACIV][A-Z<][A-Z<]{3}[A-Z<]{31}){(36)}|([A-Z0-9<]{9}[0-9][A-Z<]{3}[0-9]{2}[(01-12)][(01-31)][0-9][MF<][0-9]{2}[(01-12)][(01-31)][0-9][A-Z0-9<]{8}){(36)}|([PV][A-Z<][A-Z<]{3}[A-Z<]{39}){(44)}|([A-Z0-9<]{9}[0-9][A-Z<]{3}[0-9]{2}[(01-12)][(01-31)][0-9][MF<][0-9]{2}[(01-12)][(01-31)][0-9][A-Z0-9<]{14}[A-Z0-9<]{2}){(44)}\",\"StringLengthRange\": [30,44],\"CharHeightRange\": [5,1000,1],\"BinarizationModes\": [{\"BlockSizeX\": 30,\"BlockSizeY\": 30,\"Mode\": \"BM_LOCAL_BLOCK\",\"MorphOperation\": \"Close\"}]},{\"Name\": \"tls-mrz-passport\",\"StringRegExPattern\": \"(P[A-Z<][A-Z<]{3}[A-Z<]{39}){(44)}|([A-Z0-9<]{9}[0-9][A-Z<]{3}[0-9]{2}[(01-12)][(01-31)][0-9][MF<][0-9]{2}[(01-12)][(01-31)][0-9][A-Z0-9<]{14}[0-9<][0-9]){(44)}\",\"StringLengthRange\": [44,44],\"BaseTextLineSpecificationName\": \"tls-mrz-text\"}],\"LabelRecognizerTaskSettingOptions\": [{\"Name\": \"mrz-text-task\",\"TextLineSpecificationNameArray\": [\"tls-mrz-text\"],\"SectionImageParameterArray\": [{\"Section\": \"ST_REGION_PREDETECTION\",\"ImageParameterName\": \"ip-mrz-text\"},{\"Section\": \"ST_TEXT_LINE_LOCALIZATION\",\"ImageParameterName\": \"ip-mrz-text\"},{\"Section\": \"ST_TEXT_LINE_RECOGNITION\",\"ImageParameterName\": \"ip-mrz-text\"}]},{\"Name\": \"task-mrz-passport\",\"TextLineSpecificationNameArray\": [\"tls-mrz-text\"],\"BaseLabelRecognizerTaskSettingName\": \"mrz-text-task\"}],\"CharacterModelOptions\": [{\"Name\": \"MRZ\"}],\"ImageParameterOptions\": [{\"Name\": \"ip-mrz-text\",\"TextureDetectionModes\": [{\"Mode\": \"TDM_GENERAL_WIDTH_CONCENTRATION\",\"Sensitivity\": 8}],\"TextDetectionMode\": {\"Mode\": \"TTDM_LINE\",\"CharHeightRange\": [20,1000,1],\"Sensitivity\": 7}}]}");
-        let OCRResult = await router.capture(blob, "mrz");
-        await router.resetSettings();
-        let barcodeReadingResult = await router.capture(blob, "ReadBarcodes_Balance");
-        console.log(barcodeReadingResult);
-        console.log(OCRResult);
-        await parseOCRResult(OCRResult,index)
-        await parseBarcodeResult(barcodeReadingResult,index)
+      let canvas = getSelectedCanvas();
+      if (!canvas) {
+        return;
       }
+      await router.initSettings("{\"CaptureVisionTemplates\": [{\"Name\": \"mrz\",\"ImageROIProcessingNameArray\": [\"roi-mrz-passport\"]}],\"TargetROIDefOptions\": [{\"Name\": \"roi-mrz-passport\",\"TaskSettingNameArray\": [\"task-mrz-passport\"]}],\"TextLineSpecificationOptions\": [{\"Name\": \"tls-mrz-text\",\"CharacterModelName\": \"MRZ\",\"StringRegExPattern\": \"([ACI][A-Z<][A-Z<]{3}[A-Z0-9<]{9}[0-9][A-Z0-9<]{15}){(30)}|([0-9]{2}[(01-12)][(01-31)][0-9][MF<][0-9]{2}[(01-12)][(01-31)][0-9][A-Z<]{3}[A-Z0-9<]{11}[0-9]){(30)}|([A-Z<]{30}){(30)}|([ACIV][A-Z<][A-Z<]{3}[A-Z<]{31}){(36)}|([A-Z0-9<]{9}[0-9][A-Z<]{3}[0-9]{2}[(01-12)][(01-31)][0-9][MF<][0-9]{2}[(01-12)][(01-31)][0-9][A-Z0-9<]{8}){(36)}|([PV][A-Z<][A-Z<]{3}[A-Z<]{39}){(44)}|([A-Z0-9<]{9}[0-9][A-Z<]{3}[0-9]{2}[(01-12)][(01-31)][0-9][MF<][0-9]{2}[(01-12)][(01-31)][0-9][A-Z0-9<]{14}[A-Z0-9<]{2}){(44)}\",\"StringLengthRange\": [30,44],\"CharHeightRange\": [5,1000,1],\"BinarizationModes\": [{\"BlockSizeX\": 30,\"BlockSizeY\": 30,\"Mode\": \"BM_LOCAL_BLOCK\",\"MorphOperation\": \"Close\"}]},{\"Name\": \"tls-mrz-passport\",\"StringRegExPattern\": \"(P[A-Z<][A-Z<]{3}[A-Z<]{39}){(44)}|([A-Z0-9<]{9}[0-9][A-Z<]{3}[0-9]{2}[(01-12)][(01-31)][0-9][MF<][0-9]{2}[(01-12)][(01-31)][0-9][A-Z0-9<]{14}[0-9<][0-9]){(44)}\",\"StringLengthRange\": [44,44],\"BaseTextLineSpecificationName\": \"tls-mrz-text\"}],\"LabelRecognizerTaskSettingOptions\": [{\"Name\": \"mrz-text-task\",\"TextLineSpecificationNameArray\": [\"tls-mrz-text\"],\"SectionImageParameterArray\": [{\"Section\": \"ST_REGION_PREDETECTION\",\"ImageParameterName\": \"ip-mrz-text\"},{\"Section\": \"ST_TEXT_LINE_LOCALIZATION\",\"ImageParameterName\": \"ip-mrz-text\"},{\"Section\": \"ST_TEXT_LINE_RECOGNITION\",\"ImageParameterName\": \"ip-mrz-text\"}]},{\"Name\": \"task-mrz-passport\",\"TextLineSpecificationNameArray\": [\"tls-mrz-text\"],\"BaseLabelRecognizerTaskSettingName\": \"mrz-text-task\"}],\"CharacterModelOptions\": [{\"Name\": \"MRZ\"}],\"ImageParameterOptions\": [{\"Name\": \"ip-mrz-text\",\"TextureDetectionModes\": [{\"Mode\": \"TDM_GENERAL_WIDTH_CONCENTRATION\",\"Sensitivity\": 8}],\"TextDetectionMode\": {\"Mode\": \"TTDM_LINE\",\"CharHeightRange\": [20,1000,1],\"Sensitivity\": 7}}]}");
+      let OCRResult = await router.capture(canvas, "mrz");
+      await router.resetSettings();
+      let barcodeReadingResult = await router.capture(canvas, "ReadBarcodes_Balance");
+      await parseOCRResult(OCRResult);
+      await parseBarcodeResult(barcodeReadingResult);
       if (readingResults.length>0) {
         showResultModal();
       }else{
@@ -565,7 +569,7 @@
       }
     }
 
-    async function parseOCRResult(result,imageIndex){
+    async function parseOCRResult(result){
       let str = "";
       if (result.items.length < 2) {
         return;
@@ -582,11 +586,10 @@
         let parsedResultItem = await parser.parse(str);
         console.log(parsedResultItem);
         readingResults.push(parsedResultItem);
-        imageIndices.push(imageIndex);
       }
     }
 
-    async function parseBarcodeResult(result,imageIndex){
+    async function parseBarcodeResult(result){
       for (let index = 0; index < result.items.length; index++) {
         const item = result.items[index];
         if (item.type == Dynamsoft.Core.EnumCapturedResultItemType.CRIT_BARCODE) {
@@ -596,7 +599,6 @@
           try {
             let parsedResultItem = await parser.parse(item.bytes);
             readingResults.push(parsedResultItem);
-            imageIndices.push(imageIndex);
             console.log(parsedResultItem);  
           } catch (error) {
             console.log(error);
@@ -646,14 +648,16 @@
         let row = document.createElement("tr");
         let fieldCell = document.createElement("td");
         let valueCell = document.createElement("td");
+        let canvas = getSelectedCanvas();
         let img = document.createElement("img");
-        img.src = DWObject.GetImageURL(imageIndices[index]);
+        if (canvas) {
+          img.src = canvas.toDataURL();
+        }
         fieldCell.innerText = "image";
         valueCell.appendChild(img);
         row.appendChild(fieldCell);
         row.appendChild(valueCell);
         body.appendChild(row);
-
         let li = document.createElement("li");
         li.append(table);
         ol.appendChild(li);
