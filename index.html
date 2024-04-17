@@ -10,7 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/dynamsoft-document-normalizer@2.0.20/dist/ddn.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dynamsoft-code-parser@2.0.20/dist/dcp.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dynamsoft-capture-vision-router@2.0.32/dist/cvr.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dynamsoft-camera-enhancer@4.0.1/dist/dce.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dynamsoft-camera-enhancer@4.0.2/dist/dce.js"></script>
   <style>
     .scanner {
       display: flex;
@@ -25,6 +25,14 @@
     .viewer {
       flex-basis: 70%;
       overflow: hidden;
+    }
+
+    .dce-video-container {
+      position: relative;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
     }
     
     .navbar {
@@ -222,9 +230,10 @@
             <label>
               Resolution:
               <select id="select-resolution">
-                <option value="100">100</option>
-                <option value="200">200</option>
-                <option value="300" selected>300</option>
+                <option value="640x480">640x480</option>
+                <option value="1280x720">1280x720</option>
+                <option value="1920x1080" selected>1920x1080</option>
+                <option value="3840x2160">3840x2160</option>
               </select>
             </label>
           </div>
@@ -235,8 +244,7 @@
             </label>
           </div>
           <div>
-            <a onclick="scan();" class="d-primary-btn fullwidth" style="padding-top:5px;padding-bottom:5px;">Scan</a>
-            <a onclick="loadImages();" class="d-secondary-btn fullwidth" style="margin-top:5px;">Import Local Image</a>
+            <a onclick="startCamera();" class="d-primary-btn fullwidth" style="padding-top:5px;padding-bottom:5px;">Start Camera</a>
           </div>
         </div>
       </div>
@@ -245,11 +253,13 @@
           <div id="viewerContainer" class="main-view">
             <div id="documentViewer"></div>
           </div>
-          <div id="enhancerUIContainer" class="main-view"></div>
+          <div id="enhancerUIContainer" class="main-view">
+            <div class="dce-video-container"></div>
+          </div>
           <div class="actions">
             <a class="d-primary-btn" onclick="cropAll();">Crop All</a>
             <a class="d-primary-btn" onclick="readAll();">Read All</a>
-            <span id="status" class="ml-10"></span>
+            <a onclick="loadImages();" class="d-secondary-btn" style="margin-top:5px;">Import Local Image</a>
           </div>
         </div>
       </div>
@@ -283,7 +293,7 @@
     let router;
     let parser;
     let cameraEnhancer;
-    let scanners = [];
+    let cameras = [];
     let readingResults = [];
     let imageIndices = [];
     let MRZFields = ["documentNumber","passportNumber","issuingState","name","sex","nationality","dateOfExpiry","dateOfBirth"];
@@ -327,9 +337,40 @@
       await Dynamsoft.DCP.CodeParserModule.loadSpec("MRTD_TD3_VISA")
       await Dynamsoft.DCP.CodeParserModule.loadSpec("AAMVA_DL_ID");
       parser = await Dynamsoft.DCP.CodeParser.createInstance();
-      let cameraView = await Dynamsoft.DCE.CameraView.createInstance();
+      let cameraView = await Dynamsoft.DCE.CameraView.createInstance(document.getElementById("enhancerUIContainer"));
       cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(cameraView);
-      document.querySelector("#enhancerUIContainer").append(cameraView.getUIElement());
+      //document.querySelector("#enhancerUIContainer").append(cameraView.getUIElement());
+      listCameras();
+    }
+
+    async function listCameras(){
+      let cameraSelect = document.getElementById("select-camera");
+      cameras = await cameraEnhancer.getAllCameras();
+      for (let index = 0; index < cameras.length; index++) {
+        const camera = cameras[index];
+        cameraSelect.appendChild(new Option(camera.label,camera.deviceId));
+      }
+    }
+
+    async function startCamera(){
+      toggleCamera(true);
+      let selectedCamera = cameras[document.getElementById("select-camera").selectedIndex];
+      let selectedResolution = document.getElementById("select-resolution").selectedOptions[0].value;
+      let width = parseInt(selectedResolution.split("x")[0]);
+      let height = parseInt(selectedResolution.split("x")[1]);
+      await cameraEnhancer.selectCamera(selectedCamera);
+      await cameraEnhancer.setResolution({width:width, height:height});
+      await cameraEnhancer.open();
+    }
+
+    function toggleCamera(show){
+      if (show) {
+        document.getElementById("viewerContainer").style.display = "none";
+        document.getElementById("enhancerUIContainer").style.display = "block";
+      }else{
+        document.getElementById("viewerContainer").style.display = "block";
+        document.getElementById("enhancerUIContainer").style.display = "none";
+      }
     }
 
     async function cropAll(){
@@ -482,12 +523,9 @@
       table.appendChild(body);
       return table;
     }
+
     function hideResultModal(){
       document.getElementsByClassName("result-modal")[0].classList.remove("active");
-    }
-
-    function updateStatus(status){
-      document.getElementById("status").innerText = status;
     }
   </script>
 </body>
