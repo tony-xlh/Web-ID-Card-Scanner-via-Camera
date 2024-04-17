@@ -46,6 +46,15 @@
       margin: 5px;
     }
 
+    #documentViewer canvas:hover{
+      background-color: azure;
+    }
+
+    #documentViewer canvas.selected{
+      border: 1px solid orange;
+      background-color: azure;
+    }
+
     .dce-video-container {
       position: relative;
       left: 0;
@@ -330,6 +339,19 @@
       document.getElementById("closeBtn").addEventListener("click",function(){
         hideResultModal();
       })
+      document.getElementById("documentViewer").addEventListener("click",function(e){
+        console.log(e);
+        let childCanvases = document.getElementById("documentViewer").getElementsByTagName("canvas");
+        for (let index = 0; index < childCanvases.length; index++) {
+          const canvas = childCanvases[index];
+          if (e.srcElement == canvas) {
+            canvas.classList.add("selected");
+          }else{
+            canvas.classList.remove("selected");
+          }
+        }
+      });
+
       showInputModal();
     }
 
