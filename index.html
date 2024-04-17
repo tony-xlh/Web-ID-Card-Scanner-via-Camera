@@ -255,7 +255,7 @@
           </div>
           <div>
             <input type="checkbox" id="autoCapture"/>
-            <label for="showUI">
+            <label for="autoCapture">
               Auto Capture
             </label>
           </div>
@@ -314,7 +314,10 @@
     let imageIndices = [];
     let MRZFields = ["documentNumber","passportNumber","issuingState","name","sex","nationality","dateOfExpiry","dateOfBirth"];
     let DLFields = ["licenseNumber","lastName","firstName","city","expirationDate","birthDate","sex","issuedDate"];
-    
+    let interval;
+    let processing = false;
+    let previousDetectionResults = [];
+
     window.onload = function(){
       document.getElementById("saveLicenseBtn").addEventListener("click",function(){
         dcvLicense = document.getElementById("dcvLicense").value;
@@ -372,10 +375,8 @@
       let cameraButton = document.getElementById("cameraButton");
       if (cameraButton.innerText == "Start Camera") {
         await startCamera();
-        cameraButton.innerText = "Capture";
       }else{
         captureFrame();
-        cameraButton.innerText = "Start Camera";
       }
     }
 
@@ -388,22 +389,82 @@
       await cameraEnhancer.selectCamera(selectedCamera);
       await cameraEnhancer.setResolution({width:width, height:height});
       await cameraEnhancer.open();
+      if (document.getElementById("autoCapture").checked) {
+        startLiveDetection();
+      }
     }
 
     function captureFrame(){
+      stopLiveDetection();
       let image = cameraEnhancer.fetchImage();
       let viewer = document.getElementById("documentViewer");
       viewer.appendChild(image.toCanvas());
       toggleCamera(false);
     }
 
+    function startLiveDetection(){
+      stopLiveDetection();
+      interval = setInterval(processFrame,200);
+    }
+
+    function stopLiveDetection(){
+      clearInterval(interval);
+      processing = false;
+      previousDetectionResults = [];
+    }
+
+    async function processFrame(){
+      if (processing == true) {
+        return;
+      }
+      processing = true;
+      let image = cameraEnhancer.fetchImage();
+      let result = await router.capture(image,"DetectDocumentBoundaries_Default");
+      console.log(result);
+      for (let index = 0; index < result.items.length; index++) {
+        const detectionResult = result.items[index];
+        if (detectionResult.type ==  Dynamsoft.Core.EnumCapturedResultItemType.CRIT_DETECTED_QUAD) {
+          if (steady(detectionResult)) {
+            stopLiveDetection();
+            appendCroppedFrame(image,detectionResult)
+          }
+        }
+        break;
+      }
+      processing = false;
+    }
+
+    async function appendCroppedFrame(image,detectionResult){
+      let newSettings = await router.getSimplifiedSettings("NormalizeDocument_Default");
+      newSettings.roiMeasuredInPercentage = 0;
+      newSettings.roi.points = detectionResult.location.points;
+      await router.updateSettings("NormalizeDocument_Default", newSettings);
+      let normalizeResult = await router.capture(image, "NormalizeDocument_Default");
+      if (normalizeResult.items[0]) {
+        let viewer = document.getElementById("documentViewer");
+        viewer.appendChild(normalizeResult.items[0].toCanvas());
+      }
+      toggleCamera(false);
+    }
+
+    function steady(detectionResult){
+      if (previousDetectionResults.length < 5) {
+        previousDetectionResults.push(detectionResult);
+        return false;
+      }else{
+        return true;
+      }
+    }
+
     function toggleCamera(show){
       if (show) {
         document.getElementById("viewerContainer").style.display = "none";
         document.getElementById("enhancerUIContainer").style.display = "block";
+        cameraButton.innerText = "Capture";
       }else{
         document.getElementById("viewerContainer").style.display = "block";
         document.getElementById("enhancerUIContainer").style.display = "none";
+        cameraButton.innerText = "Start Camera";
       }
     }
 
