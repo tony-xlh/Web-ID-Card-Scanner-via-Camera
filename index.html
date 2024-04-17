@@ -587,12 +587,26 @@
         imageEditorView.setOriginalImage(canvas);
         let result = await router.capture(canvas,"DetectDocumentBoundaries_Default");
         console.log(result);
+        let detectionResult;
         if (result.items.length>0) {
-          toggleCamera(true);
-          toggleImageEditor(true);
-          let detectionResult = result.items[0];
-          drawOverlay(detectionResult,editorDrawingLayer);
+          detectionResult = result.items[0]; 
+        }else{
+          let left = canvas.width * 0.2;
+          let top = canvas.height * 0.2;
+          let bottom = canvas.height * 0.8;
+          let right = canvas.width * 0.8;
+          detectionResult = {location:{
+            points:[
+              {x:left,y:top},
+              {x:right,y:top},
+              {x:right,y:bottom},
+              {x:left,y:bottom}
+            ]
+          }}
         }
+        toggleCamera(true);
+        toggleImageEditor(true);
+        drawOverlay(detectionResult,editorDrawingLayer);
       }
     }
 
