@@ -459,9 +459,11 @@
       stopLiveDetection();
       let image = cameraEnhancer.fetchImage();
       let viewer = document.getElementById("documentViewer");
-      viewer.appendChild(image.toCanvas());
+      let canvas = image.toCanvas();
+      viewer.appendChild(canvas);
       toggleCamera(false);
       cameraEnhancer.close();
+      viewer.scroll(0,viewer.scrollHeight);
     }
 
     function startLiveDetection(){
@@ -509,12 +511,13 @@
     }
 
     async function appendCroppedFrame(image,detectionResult){
-      let normalized = normalizedImage(image,detectionResult.location.points);
+      let normalized = await normalizedImage(image,detectionResult.location.points);
+      let viewer = document.getElementById("documentViewer");
       if (normalized) {
-        let viewer = document.getElementById("documentViewer");
         viewer.appendChild(normalized.toCanvas());
       }
       toggleCamera(false);
+      viewer.scroll(0,viewer.scrollHeight);
     }
 
     async function normalizedImage(image,points){
