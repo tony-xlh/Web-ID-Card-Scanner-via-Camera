@@ -67,13 +67,13 @@
       display: none;
     }
 
-    #confirmButton {
+    #confirmBtn {
       position: absolute;
       left: 0; 
       z-index: 999;
     }
     
-    #cancelButton {
+    #cancelBtn {
       position: absolute;
       right: 0;
       z-index: 999;
@@ -307,7 +307,7 @@
             </label>
           </div>
           <div>
-            <a id="cameraButton" onclick="performCameraAction();" class="d-primary-btn fullwidth" style="padding-top:5px;padding-bottom:5px;">Start Camera</a>
+            <a id="cameraBtn" onclick="performCameraAction();" class="d-primary-btn fullwidth" style="padding-top:5px;padding-bottom:5px;">Start Camera</a>
           </div>
         </div>
       </div>
@@ -319,8 +319,8 @@
           <div id="enhancerUIContainer" class="main-view">
             <div class="dce-video-container"></div>
             <div class="dce-image-container">
-              <button id="confirmButton">Confirm</button>
-              <button id="cancelButton">Cancel</button>
+              <button id="confirmBtn">Confirm</button>
+              <button id="cancelBtn">Cancel</button>
             </div>
           </div>
           <div class="actions">
@@ -386,10 +386,10 @@
       document.getElementById("closeBtn").addEventListener("click",function(){
         hideResultModal();
       })
-      document.getElementById("confirmButton").addEventListener("click",function(){
+      document.getElementById("confirmBtn").addEventListener("click",function(){
         confirmEditing();
       })
-      document.getElementById("cancelButton").addEventListener("click",function(){
+      document.getElementById("cancelBtn").addEventListener("click",function(){
         cancelEditing();
       })
       document.getElementById("documentViewer").addEventListener("click",function(e){
@@ -457,7 +457,7 @@
     }
     
     async function performCameraAction(){
-      let cameraButton = document.getElementById("cameraButton");
+      let cameraButton = document.getElementById("cameraBtn");
       if (cameraButton.innerText == "Start Camera") {
         await startCamera();
       }else{
