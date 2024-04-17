@@ -310,6 +310,7 @@
     let router;
     let parser;
     let cameraEnhancer;
+    let drawingLayer;
     let cameras = [];
     let readingResults = [];
     let imageIndices = [];
@@ -358,6 +359,7 @@
       await Dynamsoft.DCP.CodeParserModule.loadSpec("AAMVA_DL_ID");
       parser = await Dynamsoft.DCP.CodeParser.createInstance();
       let cameraView = await Dynamsoft.DCE.CameraView.createInstance(document.getElementById("enhancerUIContainer"));
+      drawingLayer = cameraView.createDrawingLayer();
       cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(cameraView);
       //document.querySelector("#enhancerUIContainer").append(cameraView.getUIElement());
       listCameras();
@@ -425,6 +427,7 @@
       for (let index = 0; index < result.items.length; index++) {
         const detectionResult = result.items[index];
         if (detectionResult.type ==  Dynamsoft.Core.EnumCapturedResultItemType.CRIT_DETECTED_QUAD) {
+          drawOverlay(detectionResult);
           if (steady(detectionResult)) {
             stopLiveDetection();
             appendCroppedFrame(image,detectionResult)
@@ -433,6 +436,14 @@
         break;
       }
       processing = false;
+    }
+
+    function drawOverlay(detectionResult){
+      drawingLayer.clearDrawingItems();
+      let quadItem = new Dynamsoft.DCE.QuadDrawingItem(
+        {points:detectionResult.location.points}
+      );
+      drawingLayer.addDrawingItem(quadItem);
     }
 
     async function appendCroppedFrame(image,detectionResult){
