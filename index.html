@@ -11,6 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/dynamsoft-code-parser@2.0.20/dist/dcp.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dynamsoft-capture-vision-router@2.0.32/dist/cvr.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dynamsoft-camera-enhancer@4.0.2/dist/dce.js"></script>
+  <script src="./utils.js"></script>
   <style>
     .scanner {
       display: flex;
@@ -452,7 +453,31 @@
         previousDetectionResults.push(detectionResult);
         return false;
       }else{
-        return true;
+        let smallIoU = false;
+        for (let i = 0; i < previousDetectionResults.length; i++) {
+          if (smallIoU) {
+            break;
+          }
+          const result1 = previousDetectionResults[i];
+          for (let j = 0; j < previousDetectionResults.length; j++) {
+            if (i == j) {
+              continue;
+            }
+            const result2 = previousDetectionResults[j];
+            let iou = intersectionOverUnion(result1.location.points,result2.location.points);
+            if (iou < 0.9) {
+              smallIoU = true;
+              break;
+            }
+          }
+        }
+        if (smallIoU) {
+          previousDetectionResults.splice(0,1);
+          previousDetectionResults.push(detectionResult);
+          return false;
+        }else{
+          return true;
+        }
       }
     }
 
