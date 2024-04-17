@@ -55,14 +55,30 @@
       background-color: azure;
     }
 
-    .dce-video-container {
+    .dce-video-container, .dce-image-container {
       position: relative;
       left: 0;
       top: 0;
       width: 100%;
       height: 100%;
     }
+
+    .dce-image-container {
+      display: none;
+    }
+
+    #confirmButton {
+      position: absolute;
+      left: 0; 
+      z-index: 999;
+    }
     
+    #cancelButton {
+      position: absolute;
+      right: 0;
+      z-index: 999;
+    }
+
     .navbar {
       display: flex;
       align-items: center;
@@ -281,6 +297,10 @@
           </div>
           <div id="enhancerUIContainer" class="main-view">
             <div class="dce-video-container"></div>
+            <div class="dce-image-container">
+              <button id="confirmButton">Confirm</button>
+              <button id="cancelButton">Cancel</button>
+            </div>
           </div>
           <div class="actions">
             <span style="margin-right:10px;">For Selected:</span>
@@ -321,7 +341,9 @@
     let router;
     let parser;
     let cameraEnhancer;
+    let imageEditorView;
     let drawingLayer;
+    let editorDrawingLayer;
     let cameras = [];
     let readingResults = [];
     let imageIndices = [];
@@ -340,6 +362,12 @@
       })
       document.getElementById("closeBtn").addEventListener("click",function(){
         hideResultModal();
+      })
+      document.getElementById("confirmButton").addEventListener("click",function(){
+        confirmEditing();
+      })
+      document.getElementById("cancelButton").addEventListener("click",function(){
+        cancelEditing();
       })
       document.getElementById("documentViewer").addEventListener("click",function(e){
         console.log(e);
@@ -389,7 +417,8 @@
       let cameraView = await Dynamsoft.DCE.CameraView.createInstance(document.getElementById("enhancerUIContainer"));
       drawingLayer = cameraView.createDrawingLayer();
       cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(cameraView);
-      //document.querySelector("#enhancerUIContainer").append(cameraView.getUIElement());
+      imageEditorView = await Dynamsoft.DCE.ImageEditorView.createInstance(document.getElementById("enhancerUIContainer"));
+      editorDrawingLayer = imageEditorView.createDrawingLayer();
       listCameras();
     }
 
@@ -431,6 +460,7 @@
       let viewer = document.getElementById("documentViewer");
       viewer.appendChild(image.toCanvas());
       toggleCamera(false);
+      cameraEnhancer.close();
     }
 
     function startLiveDetection(){
@@ -459,7 +489,8 @@
           drawOverlay(detectionResult);
           if (steady(detectionResult)) {
             stopLiveDetection();
-            appendCroppedFrame(image,detectionResult)
+            appendCroppedFrame(image,detectionResult);
+            cameraEnhancer.close();
           }
         }
         break;
@@ -467,25 +498,35 @@
       processing = false;
     }
 
-    function drawOverlay(detectionResult){
-      drawingLayer.clearDrawingItems();
+    function drawOverlay(detectionResult,layer){
+      let layerToDraw = layer ?? drawingLayer;
+      layerToDraw.clearDrawingItems();
       let quadItem = new Dynamsoft.DCE.QuadDrawingItem(
         {points:detectionResult.location.points}
       );
-      drawingLayer.addDrawingItem(quadItem);
+      layerToDraw.addDrawingItem(quadItem);
     }
 
     async function appendCroppedFrame(image,detectionResult){
+      let normalized = normalizedImage(image,detectionResult.location.points);
+      if (normalized) {
+        let viewer = document.getElementById("documentViewer");
+        viewer.appendChild(normalized.toCanvas());
+      }
+      toggleCamera(false);
+    }
+
+    async function normalizedImage(image,points){
       let newSettings = await router.getSimplifiedSettings("NormalizeDocument_Default");
       newSettings.roiMeasuredInPercentage = 0;
-      newSettings.roi.points = detectionResult.location.points;
+      newSettings.roi.points = points;
       await router.updateSettings("NormalizeDocument_Default", newSettings);
       let normalizeResult = await router.capture(image, "NormalizeDocument_Default");
       if (normalizeResult.items[0]) {
-        let viewer = document.getElementById("documentViewer");
-        viewer.appendChild(normalizeResult.items[0].toCanvas());
+        return normalizeResult.items[0];
+      }else{
+        return null;
       }
-      toggleCamera(false);
     }
 
     function steady(detectionResult){
@@ -538,6 +579,61 @@
       if (canvas) {
         canvas.remove();
       }
+    }
+
+    async function editSelected(){
+      let canvas = getSelectedCanvas();
+      if (canvas) {
+        imageEditorView.setOriginalImage(canvas);
+        let result = await router.capture(canvas,"DetectDocumentBoundaries_Default");
+        console.log(result);
+        if (result.items.length>0) {
+          toggleCamera(true);
+          toggleImageEditor(true);
+          let detectionResult = result.items[0];
+          drawOverlay(detectionResult,editorDrawingLayer);
+        }
+      }
+    }
+
+    function toggleImageEditor(show){
+      if (show) {
+        document.getElementsByClassName("dce-video-container")[0].style.display = "none";
+        document.getElementsByClassName("dce-image-container")[0].style.display = "block";
+      }else{
+        document.getElementsByClassName("dce-video-container")[0].style.display = "block";
+        document.getElementsByClassName("dce-image-container")[0].style.display = "none";
+      }
+    }
+
+    async function confirmEditing(){
+      let drawingItem = editorDrawingLayer.getDrawingItems()[0];
+      let points = drawingItem.getQuad().points;
+      let image = imageEditorView.getOriginalImage();
+      let normalized = await normalizedImage(image,points);
+      let childCanvases = document.getElementById("documentViewer").getElementsByTagName("canvas");
+      let selectedIndex = -1;
+      for (let index = childCanvases.length - 1; index >= 0; index--) {
+        const canvas = childCanvases[index];
+        if (canvas.classList.contains("selected")) {
+          selectedIndex = index;
+          break
+        }
+      }
+      let selectedCanvas = childCanvases[selectedIndex];
+      if (selectedIndex != -1) {
+        document.getElementById("documentViewer").insertBefore(normalized.toCanvas(),selectedCanvas);
+        selectedCanvas.remove();
+      }else{
+        document.getElementById("documentViewer").appendChild(normalized.toCanvas());
+      }
+      toggleCamera(false);
+      toggleImageEditor(false);
+    }
+
+    function cancelEditing(){
+      toggleCamera(false);
+      toggleImageEditor(false);
     }
 
     function getSelectedCanvas(){
