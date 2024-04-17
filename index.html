@@ -136,11 +136,6 @@
       font-family: "sans-serif"
     }
 
-    .d-primary-btn:hover {
-      box-shadow:-4px 4px #000;
-      transform: translate(4px,-4px)
-    }
-
     .d-secondary-btn {
       display: inline-block;
       background-color: transparent;
@@ -150,7 +145,21 @@
       font-family: "sans-serif"
     }
 
-    .d-secondary-btn:hover {
+    @media(any-hover:hover){
+      .primaryBtn:hover {
+        box-shadow: -4px 4px 0 0 #000;
+        transform: translate(4px,-4px);
+      }
+      .secondaryBtn:hover {
+        color: #fea543;
+      }
+    }
+
+    .primaryBtn:active {
+      color: #fea543;
+    }
+
+    .secondaryBtn:active {
       color: #fea543;
     }
 
@@ -244,7 +253,7 @@
       }
 
       .main-view {
-        height: 400px;
+        height: 300px;
       }
 
       #documentViewer canvas{
