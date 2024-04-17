@@ -307,7 +307,8 @@
             <a class="d-primary-btn" onclick="deleteSelected();">Delete</a>
             <a class="d-primary-btn" onclick="editSelected();">Edit</a>
             <a class="d-primary-btn" onclick="readSelected();">Read</a>
-            <a onclick="loadImages();" class="d-secondary-btn" style="margin-top:5px;">Import Local Image</a>
+            <a onclick="triggerFileInput();" class="d-secondary-btn" style="margin-top:5px;">Import Local Image</a>
+            <input style="display:none;" type="file" id="file" onchange="loadImageFromFile();" accept=".jpg,.jpeg,.png,.bmp" />
           </div>
         </div>
       </div>
@@ -795,6 +796,36 @@
 
     function hideResultModal(){
       document.getElementsByClassName("result-modal")[0].classList.remove("active");
+    }
+
+    function triggerFileInput(){
+      document.getElementById("file").click();
+    }
+
+    function loadImageFromFile(){
+      let fileInput = document.getElementById("file");
+      let files = fileInput.files;
+      if (files.length == 0) {
+        return;
+      }
+      let file = files[0];
+      fileReader = new FileReader();
+      fileReader.onload = function(e){
+        let img = document.createElement("img");
+        img.onload = function(){
+          let canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          let context = canvas.getContext("2d")
+          context.drawImage(img,0,0);
+          document.getElementById("documentViewer").appendChild(canvas);
+        }
+        img.src = e.target.result;
+      };
+      fileReader.onerror = function () {
+        console.warn('oops, something went wrong.');
+      };
+      fileReader.readAsDataURL(file);
     }
   </script>
 </body>
