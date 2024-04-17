@@ -440,6 +440,13 @@
       parser = await Dynamsoft.DCP.CodeParser.createInstance();
       let cameraView = await Dynamsoft.DCE.CameraView.createInstance(document.getElementById("enhancerUIContainer"));
       drawingLayer = cameraView.createDrawingLayer();
+      let newStyleId = Dynamsoft.DCE.DrawingStyleManager.createDrawingStyle({
+          fillStyle: "rgba(100, 75, 245, 0.3)",
+          lineWidth: 5,
+          paintMode: "strokeAndFill",
+          strokeStyle: "rgba(73, 173, 245, 1)"
+      });
+      drawingLayer.setDefaultStyle(newStyleId);
       cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(cameraView);
       imageEditorView = await Dynamsoft.DCE.ImageEditorView.createInstance(document.getElementById("enhancerUIContainer"));
       editorDrawingLayer = imageEditorView.createDrawingLayer();
