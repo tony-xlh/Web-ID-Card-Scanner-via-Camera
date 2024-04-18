@@ -17,3 +17,7 @@ It uses the following SDKs by Dynamsoft:
 * [Dynamsoft Code Parser](https://www.dynamsoft.com/code-parser/docs/core/introduction/): parse MRZ and barcodes to get meaningful data
 
 [Online demo](https://tony-xlh.github.io/Web-ID-Card-Scanner-via-Camera/)
+
+## Blog
+
+[How to Build a Web App to Scan an ID Card via Camera](https://www.dynamsoft.com/codepool/scan-id-card-via-camera-web-app.html)
